@@ -15,19 +15,7 @@ import itertools
 import sys
 
 print('\n##### Task 4 Project 2 #####\n')
-"""
-message = 'A really secret message. Not for prying eyes.'
 
-key = Fernet.generate_key()
-print(f'Key: {key}\n')
-
-f = Fernet(key)
-encrypted = f.encrypt(bytes(message, 'utf-8'))
-print(f'Encrypted Message: {encrypted}\n')
-
-decrypted = f.decrypt(encrypted).decode('utf-8')
-print(f'Decrypted Message: {decrypted}\n')
-"""
 #500kb = 500000bytes
 content = bytes('\0','utf-8')
 print('##### Creating file1 of size 500kb #####')
@@ -39,9 +27,6 @@ with open('file2','wb') as out:
     out.seek((250000) -1)
     out.write(content)
 
-def ut8len(s):
-    return len(s.encode('utf-8'))
-
 def create_key_128():
     """ Create a key of 128 bits """
     key = base64.urlsafe_b64encode(urandom(32))
@@ -52,25 +37,15 @@ def create_key_256():
     key = base64.urlsafe_b64encode(urandom(32))
     return key
 
-print()
 key128 = create_key_128()
 key256 = create_key_256()
-print()
-print()
 
-""" One Second Loop """
 
 timeout = 1
 start = time.time()
-"""
-while (time.time() - start) - timeout:
-    print ("Iteration Count: {0}".format(count))
-    count += 1
-    cipher_suite = Fernet(key128)
-    cipher_text = cipher_suite.encrypt(b"A really secret message.  Not for prying eyes.")
-"""
 count = 0
 for i in itertools.count():
+    """ One Second Loop """
     if time.time() - start >= timeout:
         break
     f1 = Fernet(key256)
