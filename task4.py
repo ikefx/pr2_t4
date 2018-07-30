@@ -1,3 +1,4 @@
+# Alex Daigre Andrew Dillon Neil Eichelber Archie McClendon
 # === Task 4 ===
 # Create 2 different sized files, encrypt them with AES with 128
 # and 256 bit keys.  Generate key randomly
@@ -6,10 +7,14 @@
 # how large a file could you decrypt in a second?
 # https://cryptography.io/en/latest/fernet/
 
+
 from __future__ import print_function, unicode_literals
 import struct
+import math
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import (
     Cipher,
@@ -20,17 +25,15 @@ import os
 from os import urandom
 import base64
 import time
-import sched
-import itertools
 import sys
 
 """ CREATE FILES TO ENCRYPT <-> DECRYPT """
 content = bytes('\0','utf-8')
 with open('textFile01.txt','wb') as out:
-    out.seek((125000) -1)
+    out.seek((1000000) -1) #1000000 bytes 100kb
     out.write(content)
 with open('textFile02.txt','wb') as out:
-    out.seek((4000000) -1)
+    out.seek((5000000) -1) #5000000 bytes 500kb
     out.write(content)
 
 print('\n##### Task 4 : Project 2 #####\n')
@@ -39,9 +42,6 @@ print('\n##### Task 4 : Project 2 #####\n')
 
 def encrypt128(ptext):
     """ AES encrypt CBC Mode 128 bit key """
-    backend = default_backend()
-    iv = os.urandom(16)
-
     pad = padding.PKCS7(128).padder()
     ptext = pad.update(ptext) + pad.finalize()
 
@@ -88,6 +88,7 @@ def decrypt256(key, iv, ctext):
 
 ####################
 
+input("Press Enter to continue...")
 backend = default_backend()
 
 """ First Run """
@@ -109,9 +110,9 @@ while time.time() < t_end:
     plaintext = decrypt128(key, iv, ciphertext)
     counter01 += 1
     f.close()
-print('AES CBC Mode with 128 bit key on small: \"textFile01.txt\" encrypted-->decrypted ' + str(counter01) + ' times.')
+print('--> AES CBC Mode 100kb file 128bit key encrypt->decrypt completed: ' + str(counter01) + '.')
 
-#time.sleep(1)
+input("Press Enter to continue...")
 
 """ Second Run """
 counter02 = 0
@@ -130,9 +131,9 @@ while time.time() < t_end:
     plaintext = decrypt128(key, iv, ciphertext)
     counter02 += 1
     f.close()
-print('AES CBC Mode with 128 bit key on big: \"textFile02.txt\" encrypted-->decrypted ' + str(counter02) + ' times.')
+print('--> AES CBC Mode 500kb file 128bit key encrypt->decrypt completed: ' + str(counter02) + '.')
 
-#time.sleep(1)
+input("Press Enter to continue...")
 
 """ Third Run """
 counter03 = 0
@@ -151,8 +152,9 @@ while time.time() < t_end:
     plaintext = decrypt256(key, iv, ciphertext)
     counter03 += 1
     f.close()
-print('AES CBC Mode with 256 bit key on small: \"textFile01.txt\" encrypted-->decrypted ' + str(counter03) + ' times.')
-#time.sleep(1)
+print('--> AES CBC Mode 100kb file 256bit key encrypt->decrypt completed: ' + str(counter03) + '.')
+
+input("Press Enter to continue...")
 
 """ Fourth Run """
 counter04 = 0
@@ -171,4 +173,151 @@ while time.time() < t_end:
     plaintext = decrypt256(key, iv, ciphertext)
     counter04 += 1
     f.close()
-print('AES CBC Mode with 256 bit key on big: \"textFile02.txt\" encrypted--> ' + str(counter04) + ' times.')
+print('--> AES CBC Mode 500kb file 256bit key encrypt->decrypt completed: ' + str(counter04) + '.')
+
+time.sleep(1)
+input("Press Enter to continue...")
+
+########## RSA ############
+#### sudo pip3 install pycrypto
+#### sudo pip3 install pycryptodome
+#### sudo pip3 install cryptography
+
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric import utils
+
+
+def gen_key():
+    """ RSA private key """
+    private_key = rsa.generate_private_key(
+        public_exponent=65537, key_size=2048, backend=default_backend()
+    )
+    return private_key
+def gen_pubKey(privateKey):
+    """ RSA PUBLIC KEY """
+    chosen_hash = hashes.SHA256()
+    hasher = hashes.Hash(chosen_hash, default_backend())
+    hasher.update(b"data & ")
+    hasher.update(b"more data")
+    digest = hasher.finalize()
+    sig = privateKey.sign(
+        digest,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+            ),
+        utils.Prehashed(chosen_hash)
+        )    
+    publicKey = privateKey.public_key()
+    publicKey.verify(
+        sig,
+        digest,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+            ),
+        utils.Prehashed(chosen_hash)
+        )
+    return publicKey
+
+def encryptRSA(public_key, message):
+    """ RSA ENCRYPT """
+    cText = public_key.encrypt(
+        message, padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+            )
+        )
+    return cText
+
+def decryptRSA(private_key, ciphertext):
+    """ RSA DECRYPT """
+    pText = private_key.decrypt(
+        ciphertext,
+            padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+            )
+        )    
+    return pText
+
+### CREATE FILES FOR RSA ###
+f = open('rsaFile1','wb')
+f.seek(15) #16byte
+f.write(b"\0")
+f.close()
+
+f = open('rsaFile2','wb')
+f.seek(31) #32byte
+f.write(b"\0")
+f.close()
+
+f = open('rsaFile3','wb')
+f.seek(63) #64byte
+f.write(b"\0")
+f.close()
+
+f = open('rsaFile4','wb')
+f.seek(127) #64byte
+f.write(b"\0")
+f.close()
+
+n1 = 0
+ti_end = time.time() + 1
+while time.time() < ti_end:
+    with open('rsaFile1', 'rb') as f:
+        plaintext = f.read()
+    privateKey = gen_key()
+    publicKey = gen_pubKey(privateKey)
+    t1 = encryptRSA(publicKey, plaintext)
+    t2 = decryptRSA(privateKey,t1)
+    n1 += 1                  
+print("--> RSA Encryption on 16 byte file: Encrypt->Decrypt operations completed: " + str(n1) +".")
+
+input("Press Enter to continue...")
+
+n2 = 0
+t2_end = time.time() + 1
+while time.time() < t2_end:
+    with open('rsaFile2', 'rb') as f:
+        plaintext = f.read()
+    privateKey = gen_key()
+    publicKey = gen_pubKey(privateKey)
+    t1 = encryptRSA(publicKey, plaintext)
+    t2 = decryptRSA(privateKey,t1)
+    n2 += 1                  
+print("--> RSA Encryption on 32 byte file: Encrypt->Decrypt operations completed: " + str(n2) +".")
+
+input("Press Enter to continue...")
+
+n3 = 0
+t3_end = time.time() + 1
+while time.time() < t3_end:
+    with open('rsaFile3', 'rb') as f:
+        plaintext = f.read()
+    privateKey = gen_key()
+    publicKey = gen_pubKey(privateKey)
+    t1 = encryptRSA(publicKey, plaintext)
+    t2 = decryptRSA(privateKey,t1)
+    n3 += 1                  
+print("--> RSA Encryption on 64 byte file: Encrypt->Decrypt operations completed: " + str(n3) +".")
+
+input("Press Enter to continue...")
+
+n4 = 0
+t4_end = time.time() + 1
+while time.time() < t4_end:
+    with open('rsaFile4', 'rb') as f:
+        plaintext = f.read()
+    privateKey = gen_key()
+    publicKey = gen_pubKey(privateKey)
+    t1 = encryptRSA(publicKey, plaintext)
+    t2 = decryptRSA(privateKey,t1)
+    n3 += 1                  
+print("--> RSA Encryption on 128 byte file: Encrypt->Decrypt operations completed: " + str(n4) +".\n")
