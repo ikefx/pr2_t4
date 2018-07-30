@@ -1,4 +1,4 @@
-# Alex Daigre Andrew Dillon Neil Eichelber Archie McClendon
+# Alex Daigre Andrew Dillon Neil Eichelberger Archie McClendon
 # === Task 4 ===
 # Create 2 different sized files, encrypt them with AES with 128
 # and 256 bit keys.  Generate key randomly
